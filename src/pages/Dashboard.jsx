@@ -8,14 +8,10 @@ import {
   Plus, 
   Trash2, 
   Edit, 
-  Save, 
-  X, 
   Filter,
-  ArrowDownUp,
-  DollarSign
+  ArrowDownUp
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { useAuth } from '../Context/AuthContext';
 import Navbar from '../componant/Navbar';
 
 export default function Dashboard() {
@@ -32,7 +28,6 @@ export default function Dashboard() {
   const [sortBy, setSortBy] = useState('date');
   const [sortOrder, setSortOrder] = useState('desc');
   const [activeTab, setActiveTab] = useState('transactions');
-  const [userName, setUserName] = useState('User');
   const [transactionType, setTransactionType] = useState('expense');
   const [totalIncome, setTotalIncome] = useState(0);
   const [totalExpense, setTotalExpense] = useState(0);
@@ -170,22 +165,13 @@ export default function Dashboard() {
     return 0;
   });
   
-  const total = transactions.reduce((sum, tx) => sum + tx.amount, 0);
-  
-  // Calculate category totals for the pie chart
+  // Calculate category totals for any UI elements that need it
   const categoryTotals = transactions.reduce((acc, tx) => {
     const cat = tx.category || 'general';
     if (!acc[cat]) acc[cat] = 0;
     acc[cat] += tx.amount;
     return acc;
   }, {});
-  
-  // Prepare data for charts
-  const chartData = Object.entries(categoryTotals).map(([name, value]) => ({
-    name,
-    value,
-    emoji: getCategoryEmoji(name)
-  }));
   
   // Group transactions by date for the line chart
   const getLastSevenDays = () => {
@@ -215,16 +201,16 @@ export default function Dashboard() {
   }, getLastSevenDays());
   
   // Sort by date
-  // dailyData.sort((a, b) => new Date(a.date) - new Date(b.date));
+  dailyData.sort((a, b) => new Date(a.date) - new Date(b.date));
   
-  // const toggleSort = (field) => {
-  //   if (sortBy === field) {
-  //     setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-  //   } else {
-  //     setSortBy(field);
-  //     setSortOrder('desc');
-  //   }
-  // };
+  const toggleSort = (field) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('desc');
+    }
+  };
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -235,16 +221,6 @@ export default function Dashboard() {
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-3xl font-bold">✨ Expense Tracker</h1>
-              {/* <div className="opacity-80 flex items-center gap-2">
-                <span>Hello,</span>
-                <input
-                  type="text"
-                  value={userName}
-                  onChange={(e) => setUserName(e.target.value)}
-                  className="bg-transparent border-b border-white border-opacity-50 focus:outline-none focus:border-opacity-100 px-1 py-0 w-32"
-                  placeholder="Your name"
-                />
-              </div> */}
             </div>
             <div className="flex items-center gap-4">
               <div className="bg-white bg-opacity-20 p-3 text-blue-500 rounded-lg">
@@ -375,7 +351,7 @@ export default function Dashboard() {
             )}
             
             {/* Category filter */}
-            {/* <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+            <div className="bg-white rounded-lg shadow-md p-4 mb-6">
               <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
                 <Filter size={20} /> Filter
               </h2>
@@ -395,12 +371,12 @@ export default function Dashboard() {
                 <option value="travel">✈️ Travel</option>
                 <option value="education">📚 Education</option>
               </select>
-            </div> */}
+            </div> 
           </div>
           
           {/* Main content area */}
           <div className="lg:col-span-2">
-            {/* Tabs */}
+        
             <div className="flex mb-6 bg-white rounded-lg shadow-md p-1">
               <button 
                 className={`flex-1 py-3 flex items-center justify-center gap-2 rounded-lg transition-all ${activeTab === 'transactions' ? 'bg-blue-500 text-white' : 'hover:bg-gray-100'}`}
@@ -423,7 +399,7 @@ export default function Dashboard() {
               <div className="bg-white rounded-lg shadow-md p-4">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-semibold">Recent Transactions</h2>
-                  {/* <div className="flex gap-2">
+                   <div className="flex gap-2">
                     <button 
                       onClick={() => toggleSort('date')} 
                       className={`p-2 rounded-lg ${sortBy === 'date' ? 'bg-blue-100 text-blue-500' : 'hover:bg-gray-100'}`}
@@ -445,7 +421,7 @@ export default function Dashboard() {
                     >
                       <ArrowDownUp size={18} />
                     </button>
-                  </div> */}
+                  </div> 
                 </div>
                 
                 {sortedTransactions.length === 0 ? (
@@ -496,6 +472,56 @@ export default function Dashboard() {
                             </div>
                           </div>
                         </div>
+
+                        {/* Add Edit Form that appears when editing */}
+                        {editingId === tx.id && (
+                          <div className="mt-3 p-3 border-t border-gray-200">
+                            <div className="space-y-3">
+                              <input 
+                                className="w-full p-2 border border-gray-300 rounded-lg"
+                                placeholder="Title"
+                                value={editTitle}
+                                onChange={(e) => setEditTitle(e.target.value)}
+                              />
+                              <input 
+                                className="w-full p-2 border border-gray-300 rounded-lg"
+                                placeholder="Amount"
+                                type="number"
+                                value={editAmount}
+                                onChange={(e) => setEditAmount(e.target.value)}
+                              />
+                              <select
+                                className="w-full p-2 border border-gray-300 rounded-lg"
+                                value={editCategory}
+                                onChange={(e) => setEditCategory(e.target.value)}
+                              >
+                                <option value="general">📋 General</option>
+                                <option value="food">🍔 Food</option>
+                                <option value="transport">🚗 Transport</option>
+                                <option value="entertainment">🎬 Entertainment</option>
+                                <option value="shopping">🛍️ Shopping</option>
+                                <option value="bills">📄 Bills</option>
+                                <option value="healthcare">🏥 Healthcare</option>
+                                <option value="travel">✈️ Travel</option>
+                                <option value="education">📚 Education</option>
+                              </select>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={saveEdit}
+                                  className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg transition-colors"
+                                >
+                                  Save
+                                </button>
+                                <button
+                                  onClick={cancelEdit}
+                                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 rounded-lg transition-colors"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </li>
                     ))}
                   </ul>
